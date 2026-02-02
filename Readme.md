@@ -34,8 +34,8 @@ https://documenter.getpostman.com/view/39178540/2sBXVoAoGG
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv venv
+source venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -43,13 +43,20 @@ Create a `.env` file in `backend/`:
 
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/oxygene
-API_KEY=sk-...   # Optional: for semantic search
+API_KEY=sk-...   # Required when creating bookmark(generating embedings) and also for semantic search. 
 ```
 
 Create the database (e.g. `createdb oxygene`), then run:
 
 ```bash
 python main.py
+```
+or
+```
+cd backend
+source venv/bin/activate
+cd ..
+python -m backend.main  
 ```
 
 Backend runs at **http://localhost:5000**.
@@ -75,32 +82,13 @@ Frontend runs at **http://localhost:3000**. It talks to the API at `http://local
 | Variable       | Required | Description                          |
 |----------------|----------|--------------------------------------|
 | `DATABASE_URL` | Yes      | PostgreSQL connection string         |
-| `API_KEY`      | No       | OpenAI API key for semantic search   |
+| `API_KEY`      | Yes      | Reqired for creating bookmark to generate vector keys(you can use Ollama(from g=huggingface as well)  |
 
 ### Frontend
 
 | Variable              | Required | Description                                  |
 |-----------------------|----------|----------------------------------------------|
 | `NEXT_PUBLIC_API_URL` | No       | Backend API base URL (default: `http://localhost:5000`) |
-
----
-
-## Scripts
-
-### Backend
-
-- **Development:** `python main.py` — Flask on port 5000
-- **Tests:** `pytest` (from project root or `backend/`)
-- **Production:** `gunicorn -c gunicorn.conf.py backend.main:app` — serves on port 8000 (see `gunicorn.conf.py`)
-
-### Frontend
-
-- **Development:** `npm run dev` — Next.js dev server (port 3000)
-- **Build:** `npm run build`
-- **Production:** `npm run start`
-- **Lint:** `npm run lint`
-
----
 
 ## Project structure
 
@@ -124,5 +112,5 @@ oxygene/
 
 ## Notes
 
-- If `API_KEY` is not set, semantic search will return a 503; the rest of the app works without it.
+- If `API_KEY` is not set, semantic search will return a 503 and creating bookmark will return 505 error; the rest of the app works without it.
 - CORS is configured for `localhost:3000`, `3001`, `3002` and `127.0.0.1` equivalents so the frontend can call the API during development.
