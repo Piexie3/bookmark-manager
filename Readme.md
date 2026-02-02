@@ -5,7 +5,8 @@ A bookmark manager with collections, tags, favorites, and semantic search (OpenA
 <img width="1365" height="697" alt="image" src="https://github.com/user-attachments/assets/e72dff20-d089-4960-8aab-44aa3d465af4" /> | <img width="1365" height="690" alt="image" src="https://github.com/user-attachments/assets/650b0767-839d-4674-9e0a-6411f6b8219a" />
 <img width="1365" height="701" alt="image" src="https://github.com/user-attachments/assets/d92c2f4b-8693-47fb-94c7-5a3dc269bc41" />|<img width="1365" height="696" alt="image" src="https://github.com/user-attachments/assets/ed0952e4-271f-434d-900b-fadad7c1c6c0" />
 
-here is the API for the 
+here is the API for the backend 
+https://documenter.getpostman.com/view/39178540/2sBXVoAoGG
 
 
 
