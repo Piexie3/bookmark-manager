@@ -1,0 +1,11 @@
+flask
+flask-sqlalchemy
+openai
+pytest
+pytz
+mockito
+pytest-mockito
+gunicorn
+uvicorn
+python-dotenv
+psycopg2
