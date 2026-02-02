@@ -1,13 +1,25 @@
 "use client";
 
 import { useBookmarksStore } from "@/store/bookmarks-store";
-import { collections, tags } from "@/mock-data/bookmarks";
+import { useCollectionsStore } from "@/store/collections-store";
+import { useTagsStore } from "@/store/tags-store";
 import { BookmarkCard } from "./bookmark-card";
 import { StatsCards } from "./stats-cards";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
+import { useEffect } from "react";
 
 export function BookmarksContent() {
+  const fetchBookmarks = useBookmarksStore((s) => s.fetchBookmarks);
+  const fetchCollections = useCollectionsStore((s) => s.fetchCollections);
+  const fetchTags = useTagsStore((s) => s.fetchTags);
+
+  useEffect(() => {
+    fetchTags();
+    fetchBookmarks();
+    fetchCollections();
+  }, [fetchTags, fetchBookmarks, fetchCollections]);
+
   const {
     selectedCollection,
     getFilteredBookmarks,
@@ -17,8 +29,16 @@ export function BookmarksContent() {
     filterType,
     setFilterType,
     sortBy,
+    vectorSearchResults,
+    clearVectorSearch,
+    apiError,
   } = useBookmarksStore();
+
+  const showingVectorSearch = vectorSearchResults.length > 0;
   const filteredBookmarks = getFilteredBookmarks();
+  const displayBookmarks = showingVectorSearch ? vectorSearchResults : filteredBookmarks;
+  const collections = useCollectionsStore((state) => state.collections);
+  const tags = useTagsStore((state) => state.tags);
 
   const currentCollection = collections.find(
     (c) => c.id === selectedCollection
@@ -31,19 +51,41 @@ export function BookmarksContent() {
   return (
     <div className="flex-1 w-full overflow-auto">
       <div className="p-4 md:p-6 space-y-6">
+        {apiError && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive flex items-center justify-between gap-2">
+            <span>{apiError}</span>
+            <Button variant="outline" size="sm" onClick={() => fetchBookmarks()}>
+              Retry
+            </Button>
+          </div>
+        )}
         <StatsCards />
 
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-lg font-semibold">
-                {currentCollection?.name || "All Bookmarks"}
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                {showingVectorSearch ? (
+                  <>
+                    <Sparkles className="size-5 text-primary" />
+                    Semantic search (top 15)
+                  </>
+                ) : (
+                  currentCollection?.name || "All Bookmarks"
+                )}
               </h2>
-              <p className="text-sm text-muted-foreground">
-                {filteredBookmarks.length} bookmark
-                {filteredBookmarks.length !== 1 ? "s" : ""}
-                {hasActiveFilters && " (filtered)"}
-              </p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>
+                  {displayBookmarks.length} bookmark
+                  {displayBookmarks.length !== 1 ? "s" : ""}
+                  {hasActiveFilters && !showingVectorSearch && " (filtered)"}
+                </span>
+                {showingVectorSearch && (
+                  <Button variant="ghost" size="sm" className="h-auto py-0 text-xs" onClick={clearVectorSearch}>
+                    Clear search
+                  </Button>
+                )}
+              </div>
             </div>
 
             {(activeTagsData.length > 0 || filterType !== "all") && (
@@ -81,13 +123,13 @@ export function BookmarksContent() {
 
           {viewMode === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredBookmarks.map((bookmark) => (
+              {displayBookmarks.map((bookmark) => (
                 <BookmarkCard key={bookmark.id} bookmark={bookmark} />
               ))}
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {filteredBookmarks.map((bookmark) => (
+              {displayBookmarks.map((bookmark) => (
                 <BookmarkCard
                   key={bookmark.id}
                   bookmark={bookmark}
@@ -97,7 +139,7 @@ export function BookmarksContent() {
             </div>
           )}
 
-          {filteredBookmarks.length === 0 && (
+          {displayBookmarks.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="size-12 rounded-full bg-muted flex items-center justify-center mb-4">
                 <svg

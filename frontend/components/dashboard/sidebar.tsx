@@ -49,7 +49,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { useBookmarksStore } from "@/store/bookmarks-store";
-import { collections, tags } from "@/mock-data/bookmarks";
+import { useTagsStore } from "@/store/tags-store";
+import { useCollectionsStore } from "@/store/collections-store";
+import { useAddBookmarkDialogStore } from "@/store/add-bookmark-dialog-store";
+
 import Image from "next/image";
 import logo from '@/app/favicon.ico';
 
@@ -73,6 +76,9 @@ export function BookmarksSidebar({
   const pathname = usePathname();
   const [collectionsOpen, setCollectionsOpen] = React.useState(true);
   const [tagsOpen, setTagsOpen] = React.useState(true);
+
+const collections = useCollectionsStore((state) => state.collections);
+const tags = useTagsStore((state) => state.tags);
   const {
     selectedCollection,
     setSelectedCollection,
@@ -103,7 +109,7 @@ export function BookmarksSidebar({
               <ChevronDown className="size-3 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => useAddBookmarkDialogStore.getState().setOpen(true)}>
                 <Plus className="size-4 mr-2" />
                 Create Bookmark
               </DropdownMenuItem>

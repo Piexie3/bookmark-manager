@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { bookmarks as initialBookmarks, type Bookmark } from "@/mock-data/bookmarks";
+import { type Bookmark } from "@/models/bookmark";
+import { getBookmarks, searchBookmarks, toFrontendBookmark } from "@/lib/api";
 
 type ViewMode = "grid" | "list";
 type SortBy = "date-newest" | "date-oldest" | "alpha-az" | "alpha-za";
@@ -9,12 +10,16 @@ interface BookmarksState {
   bookmarks: Bookmark[];
   archivedBookmarks: Bookmark[];
   trashedBookmarks: Bookmark[];
+  vectorSearchResults: Bookmark[];
   selectedCollection: string;
   selectedTags: string[];
   searchQuery: string;
   viewMode: ViewMode;
   sortBy: SortBy;
   filterType: FilterType;
+  isLoading: boolean;
+  apiError: string | null;
+  setBookmarks: (bookmarks: Bookmark[]) => void;
   setSelectedCollection: (collectionId: string) => void;
   toggleTag: (tagId: string) => void;
   clearTags: () => void;
@@ -28,6 +33,9 @@ interface BookmarksState {
   trashBookmark: (bookmarkId: string) => void;
   restoreFromTrash: (bookmarkId: string) => void;
   permanentlyDelete: (bookmarkId: string) => void;
+  fetchBookmarks: () => Promise<void>;
+  runVectorSearch: (query: string) => Promise<void>;
+  clearVectorSearch: () => void;
   getFilteredBookmarks: () => Bookmark[];
   getFavoriteBookmarks: () => Bookmark[];
   getArchivedBookmarks: () => Bookmark[];
@@ -35,15 +43,20 @@ interface BookmarksState {
 }
 
 export const useBookmarksStore = create<BookmarksState>((set, get) => ({
-  bookmarks: initialBookmarks,
+  bookmarks: [],
   archivedBookmarks: [],
   trashedBookmarks: [],
+  vectorSearchResults: [],
   selectedCollection: "all",
   selectedTags: [],
   searchQuery: "",
   viewMode: "grid",
   sortBy: "date-newest",
   filterType: "all",
+  isLoading: false,
+  apiError: null,
+
+  setBookmarks: (bookmarks) => set({ bookmarks, apiError: null }),
 
   setSelectedCollection: (collectionId) => set({ selectedCollection: collectionId }),
 
@@ -117,6 +130,35 @@ export const useBookmarksStore = create<BookmarksState>((set, get) => ({
     set((state) => ({
       trashedBookmarks: state.trashedBookmarks.filter((b) => b.id !== bookmarkId),
     })),
+
+  fetchBookmarks: async () => {
+    set({ isLoading: true, apiError: null });
+    try {
+      const apiBookmarks = await getBookmarks();
+      set({ bookmarks: apiBookmarks.map(toFrontendBookmark), apiError: null });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to load bookmarks";
+      set({ apiError: msg });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  runVectorSearch: async (query) => {
+    if (!query?.trim()) {
+      set({ vectorSearchResults: [] });
+      return;
+    }
+    set({ isLoading: true });
+    try {
+      const apiBookmarks = await searchBookmarks(query);
+      set({ vectorSearchResults: apiBookmarks.map(toFrontendBookmark) });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  clearVectorSearch: () => set({ vectorSearchResults: [] }),
 
   getFilteredBookmarks: () => {
     const state = get();
@@ -238,3 +280,4 @@ export const useBookmarksStore = create<BookmarksState>((set, get) => ({
     return filtered;
   },
 }));
+

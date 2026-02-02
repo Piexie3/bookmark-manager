@@ -24,6 +24,7 @@ import {
   Check,
 } from "lucide-react";
 import { useBookmarksStore } from "@/store/bookmarks-store";
+import { useAddBookmarkDialogStore } from "@/store/add-bookmark-dialog-store";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -55,7 +56,21 @@ export function BookmarksHeader({ title = "Bookmarks" }: BookmarksHeaderProps) {
     setSortBy,
     filterType,
     setFilterType,
+    runVectorSearch,
+    clearVectorSearch,
   } = useBookmarksStore();
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      runVectorSearch(searchQuery);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (!value.trim()) clearVectorSearch();
+  };
 
   const currentSort = sortOptions.find((opt) => opt.value === sortBy);
   const currentFilter = filterOptions.find((opt) => opt.value === filterType);
@@ -73,9 +88,10 @@ export function BookmarksHeader({ title = "Bookmarks" }: BookmarksHeaderProps) {
           <div className="relative hidden md:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search..."
+              placeholder="Search... (Enter for semantic search)"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               className="pl-9 w-64 h-9"
             />
           </div>
@@ -167,7 +183,11 @@ export function BookmarksHeader({ title = "Bookmarks" }: BookmarksHeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button size="sm" className="hidden sm:flex">
+          <Button
+            size="sm"
+            className="hidden sm:flex"
+            onClick={() => useAddBookmarkDialogStore.getState().setOpen(true)}
+          >
             <Plus className="size-4" />
             Add Bookmark
           </Button>

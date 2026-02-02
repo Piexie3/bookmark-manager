@@ -11,11 +11,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Archive, MoreHorizontal, RotateCcw, Trash2, ExternalLink } from "lucide-react";
 import Image from "next/image";
-import { tags as allTags, type Bookmark } from "@/mock-data/bookmarks";
+import {type Bookmark } from "@/models/bookmark";
+import { useTagsStore } from "@/store/tags-store";
 import { cn } from "@/lib/utils";
 
 function ArchivedBookmarkCard({ bookmark }: { bookmark: Bookmark }) {
   const { restoreFromArchive, trashBookmark } = useBookmarksStore();
+  const allTags = useTagsStore((state) => state.tags);
   const bookmarkTags = allTags.filter((tag) => bookmark.tags.includes(tag.id));
 
   return (

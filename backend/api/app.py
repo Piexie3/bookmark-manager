@@ -1,4 +1,6 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
+from openai import AuthenticationError
 import os
 from dotenv import load_dotenv
 
@@ -15,6 +17,21 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['OPENAI_API_KEY'] = os.environ.get('API_KEY')
 
+# Allow common dev origins so data loads when using different ports or network URL
+CORS(
+    app,
+    origins=[
+        "http://localhost:3000",
+        "https://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:3002",
+    ],
+    supports_credentials=True,
+)
+
 db.init_app(app)
 
 bookmark_service = BookmarkService()
@@ -24,7 +41,6 @@ favorite_service = FavoriteService()
 
 with app.app_context():
     db.create_all()
-
 @app.route('/tags', methods=['GET'])
 def get_tags():
     tags = tag_service.get_all()
@@ -125,6 +141,20 @@ def delete_bookmark(bookmark_id):
 def get_bookmarks():
     bookmarks = bookmark_service.get_all()
     return jsonify([bm.to_dict() for bm in bookmarks])
+
+
+@app.route('/bookmarks/search', methods=['GET'])
+def search_bookmarks():
+    """Vector search: query string compared to bookmark embeddings, returns top 15 by similarity."""
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify([])
+    limit = min(15, max(1, request.args.get('limit', 15, type=int)))
+    try:
+        bookmarks = bookmark_service.search_by_query(q, limit=limit)
+        return jsonify([bm.to_dict() for bm in bookmarks])
+    except AuthenticationError:
+        return jsonify({'error': 'OpenAI API key not configured or invalid. Set API_KEY in .env.'}), 503
 
 
 @app.route('/favorites', methods=['GET'])

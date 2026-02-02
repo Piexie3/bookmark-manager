@@ -122,5 +122,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  select {
+    @apply bg-background text-foreground;
+  }
+  select option {
+    @apply bg-background text-foreground;
+  }
 }
 

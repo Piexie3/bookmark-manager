@@ -6,6 +6,7 @@ from flask import current_app, json
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+import math
 
 
 
@@ -85,3 +86,43 @@ class BookmarkService:
         db.session.delete(bm)
         db.session.commit()
         return True
+
+    @staticmethod
+    def _cosine_similarity(a, b):
+        """Cosine similarity between two vectors (lists of floats)."""
+        if not a or not b or len(a) != len(b):
+            return 0.0
+        dot = sum(x * y for x, y in zip(a, b))
+        norm_a = math.sqrt(sum(x * x for x in a))
+        norm_b = math.sqrt(sum(x * x for x in b))
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot / (norm_a * norm_b)
+
+    def search_by_query(self, query, limit=15):
+        """
+        Vector search: embed the query, compare to stored bookmark embeddings,
+        return top `limit` bookmarks ordered by similarity (most to least).
+        """
+        if not query or not query.strip():
+            return []
+        bookmarks_with_embedding = Bookmark.query.filter(
+            Bookmark.embedding.isnot(None)
+        ).all()
+        if not bookmarks_with_embedding:
+            return []
+        response = self.openai_client.embeddings.create(
+            model="text-embedding-ada-002",
+            input=query.strip()
+        )
+        query_embedding = response.data[0].embedding
+        scored = []
+        for bm in bookmarks_with_embedding:
+            try:
+                emb = json.loads(bm.embedding) if isinstance(bm.embedding, str) else bm.embedding
+            except (TypeError, ValueError):
+                continue
+            sim = self._cosine_similarity(query_embedding, emb)
+            scored.append((sim, bm))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [bm for _, bm in scored[:limit]]

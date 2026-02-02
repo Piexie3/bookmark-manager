@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,7 +21,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBookmarksStore } from "@/store/bookmarks-store";
-import { tags as allTags, type Bookmark } from "@/mock-data/bookmarks";
+import { type Bookmark } from "@/models/bookmark";
+import { useTagsStore } from "@/store/tags-store";
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
@@ -33,6 +35,7 @@ export function BookmarkCard({
 }: BookmarkCardProps) {
   const { toggleFavorite, archiveBookmark, trashBookmark } =
     useBookmarksStore();
+  const allTags = useTagsStore((state) => state.tags);
   const bookmarkTags = allTags.filter((tag) => bookmark.tags.includes(tag.id));
 
   const handleCopyUrl = () => {
@@ -46,9 +49,7 @@ export function BookmarkCard({
   if (variant === "list") {
     return (
       <div className="group flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-      
-
-        <div className="flex-1 min-w-0">
+        <Link href={`/bookmark/${bookmark.id}`} className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-medium truncate">{bookmark.title}</h3>
             {bookmarkTags.length > 0 && (
@@ -78,9 +79,9 @@ export function BookmarkCard({
           <p className="text-xs text-muted-foreground line-clamp-2">
             {bookmark.description}
           </p>
-        </div>
+        </Link>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <Button
             variant="ghost"
             size="icon-xs"
@@ -136,7 +137,7 @@ export function BookmarkCard({
 
   return (
     <div className="group relative flex flex-col rounded-xl border bg-card overflow-hidden hover:bg-accent/30 transition-colors">
-      <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
         <Button
           variant="secondary"
           size="icon-xs"
@@ -193,11 +194,7 @@ export function BookmarkCard({
         </DropdownMenu>
       </div>
 
-      <button
-        className="w-full text-left cursor-pointer"
-        onClick={handleOpenUrl}
-      >
-
+      <Link href={`/bookmark/${bookmark.id}`} className="block w-full text-left">
         <div className="p-4 space-y-2">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-medium line-clamp-1">{bookmark.title}</h3>
@@ -226,7 +223,7 @@ export function BookmarkCard({
             </div>
           )}
         </div>
-      </button>
+      </Link>
     </div>
   );
 }
